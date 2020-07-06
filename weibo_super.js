@@ -80,7 +80,7 @@ utils.dispatch(() => {
                 content: null,
                 lines: groups.length,
                 append: (groupName, success, content) => {
-                    let line = `${success ? "🟢" : "🔴"}${groupName}${success ? "签到成功" : "签到失败"}，${content}`
+                    let line = `${success ? "🟢" : "🔴"}【${groupName}】${success ? "签到成功" : "签到失败"}，${content}`
                     resultCollector.content = resultCollector.content ? `${resultCollector.content}\n${line}` : line;
                     if (++resultCollector.counter == resultCollector.lines) {
                         utils.notify("", resultCollector.content);
@@ -89,7 +89,7 @@ utils.dispatch(() => {
                 }
             };
             groups.forEach(group => {
-                let groupName = `【${group.title}】`;
+                let groupName = group.title;
                 if (group.status == 1) return resultCollector.append(groupName, false, "已经签到了～");
                 signIn(token[urlKey.signIn], group.cid, body => {
                     if (body.result == 1) resultCollector.append(groupName, true, `${body.button.name}`);
