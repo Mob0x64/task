@@ -1,6 +1,6 @@
 /*
 地址
- |- https://github.com/Mob0x64/task/blob/master/weibo_super.js
+ |- https://github.com/Mob0x64/task
 
 描述
  |- 微博超话签到，支持无限个账号。单账号可签到的超话个数有限制（具体为超话关注列表一页可获取超话个数），
@@ -69,6 +69,11 @@ let tokenManager = {
 utils.dispatch(() => {
     let taskExecute = (tokens, idx) => {
         let token = tokens[idx];
+        let checkResult = checkToken(token);
+        if (checkResult) {
+            utils.notify("🔴签到失败", `GSID：${token.gsid}\n错误：${checkResult}`)
+            return taskExecute(tokens, ++idx);
+        }
         getFollowList(token, (groups) => {
             let resultCollector = {
                 counter: 0,
@@ -87,10 +92,8 @@ utils.dispatch(() => {
                 if (group.status == 1) return resultCollector.append(`🔴${groupName}签到失败，已经签到了～`);
                 signIn(token[urlKey.signIn], group.cid, body => {
                     let line;
-                    utils.log(groupName);
                     if (body.result == 1) line = `🟢${groupName}签到成功，${body.button.name}`;
                     else {
-                        utils.log(JSON.stringify(body));
                         line = `🔴${groupName}签到失败，`;
                         if (body.result == 388000) line += `需要验证码`;
                         else if (body["error_msg"]) line += body["error_msg"];
@@ -105,12 +108,14 @@ utils.dispatch(() => {
         });
     }
 
-    taskExecute(tokenManager.getTokens(), 0);
+    let tokens = tokenManager.getTokens();
+    if (!tokens.length) return utils.notify("", "🔴还未进行相关配置，请参照说明配置后再进行签到～")
+    taskExecute(tokens, 0);
 }, () => {
     let content; 
     let url = $request.url; 
     let tokenUpdater = (key, url) => {
-        let gsid = url.match(/gsid=(.*?)&/)[1].replace("_", "");
+        let gsid = url.match(/gsid=(.*?)&/)[1];
         let token = tokenManager.getToken(gsid);
         token = token ? token : {};
         token.gsid = gsid;
@@ -127,14 +132,15 @@ utils.dispatch(() => {
     if (content) utils.notify("", `✅ ${content}`);
 });
 
+function checkToken(token) {
+    let checkResult = "";
+    if (!token[urlKey.followList]) checkResult += "尚未配置超话关注列表信息\n";
+    if (!token[urlKey.signIn]) checkResult += "尚未配置超话签到配置信息\n";
+    return checkResult;
+}
+
 function signIn(url, cid, success, fail) {
-    utils.httpGet(url.replace(/CID/g, cid), body => {
-        utils.log("SUCCESS " + url.replace(/CID/g, cid) + "\n" + JSON.stringify(body));
-        success(body);
-    }, error => {
-        utils.log("ERROR " + url.replace(/CID/g, cid) + "\n" + JSON.stringify(error));
-        fail(error);
-    });
+    utils.httpGet(url.replace(/CID/g, cid), body =>success(body), error => fail(error));
 }
 
 function getFollowList(token, success, fail) {
@@ -198,6 +204,7 @@ function magic(setting = {
             } catch(error) {
                 if (typeof setting.exceptionHandle === 'function') return setting.exceptionHandle(error);
                 utils.notify("执行异常", error);
+                utils.log(error);
             } finally {
                 utils.done();
             }
