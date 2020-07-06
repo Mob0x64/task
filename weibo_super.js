@@ -68,6 +68,7 @@ let tokenManager = {
 
 utils.dispatch(() => {
     let taskExecute = (tokens, idx) => {
+        if (idx >= tokens.length) return;
         let token = tokens[idx];
         let checkResult = checkToken(token);
         if (checkResult) {
@@ -133,6 +134,7 @@ utils.dispatch(() => {
 });
 
 function checkToken(token) {
+    token = token ? token : {};
     let checkResult = "";
     if (!token[urlKey.followList]) checkResult += "尚未配置超话关注列表信息\n";
     if (!token[urlKey.signIn]) checkResult += "尚未配置超话签到配置信息\n";
