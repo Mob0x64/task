@@ -28,11 +28,10 @@
  特别说明
     |- BoxJS
        repo: https://github.com/chavyleung/scripts
-       订阅地址：https://gist.githubusercontent.com/Mob0x64/f32cd9eb59d0e5c4116ed584af58ef36/raw/cedb662a4506b6ea6eddb6bbb802d3875a473f3e/mob64.boxjs
+       订阅地址：https://raw.githubusercontent.com/Mob0x64/task/master/mob64.box.js
     |- Icon repo
        https://github.com/Orz-3/mini
 */
-
 const TOKEN_KEY = "mob_weibo_sign_in_token";
 
 let urlKey = {
@@ -45,14 +44,14 @@ let utils = magic({
 });
 
 let tokenManager = {
-    updateToken: (token) => {
+    updateToken: token => {
         if (!token) throw "Token can not be null";
         let tokenMapStr = utils.getData(TOKEN_KEY);
         let tokenMap = tokenMapStr ? JSON.parse(tokenMapStr) : {};
         tokenMap[token.gsid] = token;
         utils.setData(TOKEN_KEY, JSON.stringify(tokenMap));
     },
-    getToken: (gsid) => {
+    getToken: gsid => {
         let tokenMapStr = utils.getData(TOKEN_KEY);
         let tokenMap = tokenMapStr ? JSON.parse(tokenMapStr) : {};
         return tokenMap[gsid];
@@ -75,12 +74,13 @@ utils.dispatch(() => {
             utils.notify("🔴签到失败", `GSID：${token.gsid}\n错误：${checkResult}`)
             return taskExecute(tokens, ++idx);
         }
-        getFollowList(token, (groups) => {
+        getFollowList(token, groups => {
             let resultCollector = {
                 counter: 0,
                 content: null,
                 lines: groups.length,
-                append: (line) => {
+                append: (groupName, success, content) => {
+                    let line = `${success ? "🟢" : "🔴"}${groupName}${success ? "签到成功" : "签到失败"}，${content}`
                     resultCollector.content = resultCollector.content ? `${resultCollector.content}\n${line}` : line;
                     if (++resultCollector.counter == resultCollector.lines) {
                         utils.notify("", resultCollector.content);
@@ -90,18 +90,17 @@ utils.dispatch(() => {
             };
             groups.forEach(group => {
                 let groupName = `【${group.title}】`;
-                if (group.status == 1) return resultCollector.append(`🔴${groupName}签到失败，已经签到了～`);
+                if (group.status == 1) return resultCollector.append(groupName, false, "已经签到了～");
                 signIn(token[urlKey.signIn], group.cid, body => {
-                    let line;
-                    if (body.result == 1) line = `🟢${groupName}签到成功，${body.button.name}`;
+                    if (body.result == 1) resultCollector.append(groupName, true, `${body.button.name}`);
                     else {
-                        line = `🔴${groupName}签到失败，`;
-                        if (body.result == 388000) line += `需要验证码`;
-                        else if (body["error_msg"]) line += body["error_msg"];
-                        else line = line += "发生未知错误，请通过日志排查问题";
+                        let errorInfo;
+                        if (body.result == 388000) errorInfo = `需要验证码`;
+                        else if (body["error_msg"]) errorInfo = body["error_msg"];
+                        else errorInfo = "发生未知错误，请通过日志排查问题";
+                        resultCollector.append(groupName, false, errorInfo);
                     }
-                    resultCollector.append(line);
-                }, error => resultCollector.append(`🔴${groupName}签到失败，${JSON.stringify(error)}`));
+                }, error => resultCollector.append(groupName, false, `${JSON.stringify(error)}`));
             });
         }, error => {
             utils.notify("🔴签到异常", `GSID： ${token.gsid}\n 错误：${JSON.stringify(error)}`);
@@ -134,7 +133,6 @@ utils.dispatch(() => {
 });
 
 function checkToken(token) {
-    token = token ? token : {};
     let checkResult = "";
     if (!token[urlKey.followList]) checkResult += "尚未配置超话关注列表信息\n";
     if (!token[urlKey.signIn]) checkResult += "尚未配置超话签到配置信息\n";
@@ -142,7 +140,7 @@ function checkToken(token) {
 }
 
 function signIn(url, cid, success, fail) {
-    utils.httpGet(url.replace(/CID/g, cid), body =>success(body), error => fail(error));
+    utils.httpGet(url.replace(/CID/g, cid), body => success(body), error => fail(error));
 }
 
 function getFollowList(token, success, fail) {
@@ -166,7 +164,7 @@ function magic(setting = {
     const IS_QUAN_X = typeof $task != "undefined";
     const IS_SURGE = typeof $httpClient != "undefined";
     const IS_REQUEST = typeof $request != "undefined";
-    let responseAdapter = (resp) => {
+    let responseAdapter = resp => {
         if (!resp) return;
         if (resp.status) resp.statusCode = resp.status;
         else if (resp.statusCode) resp.status = resp.statusCode;
@@ -178,10 +176,10 @@ function magic(setting = {
         } : options;
         if (IS_QUAN_X) {
             options.method = method;
-            $task.fetch(options).then((resp) => {
+            $task.fetch(options).then(resp => {
                 resp = responseAdapter(resp);
                 success(JSON.parse(resp.body), resp);
-            }, (reason) => fail(reason.error));
+            }, reason => fail(reason.error));
         } else {
             $httpClient[method.toLowerCase()](options, (error, resp) => {
                 resp = responseAdapter(resp);
@@ -193,8 +191,8 @@ function magic(setting = {
         isSurge: () => IS_SURGE,
         isQuanX: () => IS_QUAN_X,
         done: (value = {}) => $done(value),
-        log: (msg) => console.log(`[${setting.taskName}] ${msg}`),
-        getData: (key) => IS_SURGE ? $persistentStore.read(key) : $prefs.valueForKey(key),
+        log: msg => console.log(`[${setting.taskName}] ${msg}`),
+        getData: key => IS_SURGE ? $persistentStore.read(key) : $prefs.valueForKey(key),
         setData: (key, val) => IS_SURGE ? $persistentStore.write(val, key) : $prefs.setValueForKey(val, key),
         notify: (subtitle, content) => utils.customNotify(setting.taskName, subtitle, content),
         customNotify: (title, subtitle, content) => IS_SURGE ? $notification.post(title, subtitle, content) : $notify(title, subtitle, content),
