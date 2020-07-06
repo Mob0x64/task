@@ -1,6 +1,6 @@
 /*
 地址
- |- https://github.com/Mob0x64/task
+ |- https://github.com/Mob0x64/task/blob/master/weibo_super.js
 
 描述
  |- 微博超话签到，支持无限个账号。单账号可签到的超话个数有限制（具体为超话关注列表一页可获取超话个数），
