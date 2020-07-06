@@ -28,7 +28,7 @@
  特别说明
     |- BoxJS
        repo: https://github.com/chavyleung/scripts
-       订阅地址：https://raw.githubusercontent.com/Mob0x64/task/master/mob64.box.js
+       订阅地址：https://gist.githubusercontent.com/Mob0x64/f32cd9eb59d0e5c4116ed584af58ef36/raw/cedb662a4506b6ea6eddb6bbb802d3875a473f3e/mob64.boxjs
     |- Icon repo
        https://github.com/Orz-3/mini
 */
