@@ -24,7 +24,7 @@
     |- Quantumult X、Surge、Loon 配置
       【MITM】
        hostname = api.weibo.cn
-
+       (Surge 用户请注意：为了防止执行签到时触发配置写入操作，请在按说明获取完必要配置之后去掉该 hostname 对应内容或者将 hostname 对应内容改为 api.weibo.cn.com)
  特别说明
     |- BoxJS
        repo: https://github.com/chavyleung/scripts
