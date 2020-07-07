@@ -181,9 +181,9 @@ function magic(setting = {
                 success(JSON.parse(resp.body), resp);
             }, reason => fail(reason.error));
         } else {
-            $httpClient[method.toLowerCase()](options, (error, resp) => {
+            $httpClient[method.toLowerCase()](options, (error, resp, data) => {
                 resp = responseAdapter(resp);
-                error ? fail(error) : success(JSON.parse(resp.body), resp);
+                error ? fail(error) : success(JSON.parse(data), resp);
             });
         }
     };
