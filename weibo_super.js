@@ -24,16 +24,15 @@
     |- Quantumult X、Surge、Loon 配置
       【MITM】
        hostname = api.weibo.cn
-       (Surge 用户请注意：为了防止执行签到时触发配置写入操作，请在按说明获取完必要配置之后去掉该 hostname 对应内容或者将 hostname 对应内容改为 api.weibo.cn.com)
- 特别说明
-    |- BoxJS
-       repo: https://github.com/chavyleung/scripts
-       订阅地址：https://raw.githubusercontent.com/Mob0x64/task/master/mob64.box.js
-    |- Icon repo
-       https://github.com/Orz-3/mini
-*/
-const TOKEN_KEY = "mob_weibo_sign_in_token";
+       (Surge 用户请注意：按说明获取完必要配置之后请去掉该 hostname 对应内容或者将 hostname 对应内容改为 api.weibo.cn.com 方便后续改回来)
 
+特别说明
+ |- BoxJS
+    repo: https://github.com/chavyleung/scripts
+    订阅地址：https://gist.githubusercontent.com/Mob0x64/f32cd9eb59d0e5c4116ed584af58ef36/raw/cedb662a4506b6ea6eddb6bbb802d3875a473f3e/mob64.boxjs
+ |- 图标库
+    https://github.com/Orz-3/mini
+*/
 let urlKey = {
     signIn: "signIn",
     followList: "followList"
@@ -44,21 +43,23 @@ let utils = magic({
 });
 
 let tokenManager = {
+    tokenKey: "mob_weibo_sign_in_token",
+    getTokenMap: () => {
+        let tokenMapStr = utils.getData(tokenManager.tokenKey);
+        return tokenMapStr ? JSON.parse(tokenMapStr) : {};
+    },
     updateToken: token => {
         if (!token) throw "Token can not be null";
-        let tokenMapStr = utils.getData(TOKEN_KEY);
-        let tokenMap = tokenMapStr ? JSON.parse(tokenMapStr) : {};
+        let tokenMap = tokenManager.getTokenMap();
         tokenMap[token.gsid] = token;
-        utils.setData(TOKEN_KEY, JSON.stringify(tokenMap));
+        utils.setData(tokenManager.tokenKey, JSON.stringify(tokenMap));
     },
     getToken: gsid => {
-        let tokenMapStr = utils.getData(TOKEN_KEY);
-        let tokenMap = tokenMapStr ? JSON.parse(tokenMapStr) : {};
+        let tokenMap = tokenManager.getTokenMap();
         return tokenMap[gsid];
     },
     getTokens: () => {
-        let tokenMapStr = utils.getData(TOKEN_KEY);
-        let tokenMap = tokenMapStr ? JSON.parse(tokenMapStr) : {};
+        let tokenMap = tokenManager.getTokenMap();
         let tokenList = [];
         for (let key in tokenMap) tokenList.push(tokenMap[key]);
         return tokenList;
@@ -95,7 +96,7 @@ utils.dispatch(() => {
                     if (body.result == 1) resultCollector.append(groupName, true, `${body.button.name}`);
                     else {
                         let errorInfo;
-                        if (body.result == 388000) errorInfo = `需要验证码`;
+                        if (body.result == 388000) errorInfo = "需要验证码";
                         else if (body["error_msg"]) errorInfo = body["error_msg"];
                         else errorInfo = "发生未知错误，请通过日志排查问题";
                         resultCollector.append(groupName, false, errorInfo);
